@@ -232,7 +232,7 @@ class Subset(Forwards):
         int: The length of the subset.
         """
         return len(self.indices)
-
+    
     @cached_property
     def shape(self) -> Shape:
         """Get the shape of the subset."""

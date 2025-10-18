@@ -51,6 +51,7 @@ class Masked(Forwards):
 
         self.mask_name = f"{self.__class__.__name__.lower()}_mask"
 
+                
     @cached_property
     def shape(self) -> Shape:
         """Get the shape of the masked dataset."""

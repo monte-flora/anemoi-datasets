@@ -140,6 +140,11 @@ class Select(Forwards):
     def variables(self) -> list[str]:
         """Get the variables of the dataset."""
         return [self.dataset.variables[i] for i in self.indices]
+    
+    @cached_property
+    def trajectory_ids(self) -> list[int]:
+        """Get forecast trajectory ids"""
+        return self.dataset.trajectory_ids 
 
     @cached_property
     def variables_metadata(self) -> dict[str, Any]:

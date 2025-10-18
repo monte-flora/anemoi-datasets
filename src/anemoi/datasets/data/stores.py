@@ -301,7 +301,13 @@ class Zarr(Dataset):
             maximum=self.z.maximum[:],
             minimum=self.z.minimum[:],
         )
+    
+    @property
+    def trajectory_ids(self) -> NDArray[Any]:
+        """Return the forecast trajectory ids of the dataset."""
+        return self.z.trajectory_ids[:]
 
+    
     def statistics_tendencies(self, delta: datetime.timedelta | None = None) -> dict[str, NDArray[Any]]:
         """Return the statistical tendencies of the dataset."""
         if delta is None:
@@ -436,7 +442,7 @@ class ZarrWithMissingDates(Zarr):
         missing_dates = {np.datetime64(x, "s") for x in missing_dates}
         self.missing_to_dates = {i: d for i, d in enumerate(self.dates) if d in missing_dates}
         self._missing = set(self.missing_to_dates)
-
+        
     @property
     def missing(self) -> set[int]:
         """Return the missing dates of the dataset."""
