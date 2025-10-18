@@ -937,7 +937,13 @@ class Dataset(ABC, Sized):
         int
             The length of the dataset.
         """
-
+        
+    @property
+    @abstractmethod
+    def trajectory_ids(self) -> list[int]:
+        """Get forecast trajectory ids"""
+        pass   
+        
     @property
     @abstractmethod
     def variables(self) -> list[str]:

@@ -70,6 +70,11 @@ class Forwards(Dataset):
         """
         return self.forward[n]
 
+    @cached_property
+    def trajectory_ids(self) -> list[int]:
+        """Get forecast trajectory ids"""
+        return self.forward.trajectory_ids 
+    
     @property
     def name(self) -> str | None:
         """Returns the name of the forward dataset."""

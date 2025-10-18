@@ -475,7 +475,7 @@ class Cutout(GridsBase):
         lam_data = [lam[index[:3]] for lam in self.lams]
 
         # First apply spatial indexing on `self.globe` and then apply the mask
-        globe_data_sliced = self.globe[index[:3]]
+        globe_data_sliced = self.globe[index[:3]]        
         globe_data = globe_data_sliced[..., self.global_mask]
 
         # Concatenate LAM data with global data, apply the grid slicing
