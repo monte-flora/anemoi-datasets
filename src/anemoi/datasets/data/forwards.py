@@ -71,6 +71,16 @@ class Forwards(Dataset):
         return self.forward[n]
 
     @cached_property
+    def lam_mask(self) -> list[int]:
+        """Get LAM mask"""
+        return self.forward.lam_mask 
+    
+    @cached_property
+    def boundary_mask(self) -> list[int]:
+        """Get boundary mask"""
+        return self.forward.boundary_mask 
+    
+    @cached_property
     def trajectory_ids(self) -> list[int]:
         """Get forecast trajectory ids"""
         return self.forward.trajectory_ids 

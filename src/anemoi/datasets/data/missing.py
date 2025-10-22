@@ -239,10 +239,12 @@ class SkipMissingDates(Forwards):
         """Returns the end date."""
         return self.forward.end_date
 
-    @property
-    def dates(self) -> NDArray[np.datetime64]:
-        """Not implemented. Raises an error."""
-        raise NotImplementedError("SkipMissingDates.dates")
+    # Monte: commenting out so that the default dates
+    # though with some missing is retained. Could be bad!!
+    #@property
+    #def dates(self) -> NDArray[np.datetime64]:
+    #    """Not implemented. Raises an error."""
+    #    raise NotImplementedError("SkipMissingDates.dates")
 
     @debug_indexing
     @expand_list_indexing

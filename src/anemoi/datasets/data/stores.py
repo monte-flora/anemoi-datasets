@@ -306,7 +306,25 @@ class Zarr(Dataset):
     def trajectory_ids(self) -> NDArray[Any]:
         """Return the forecast trajectory ids of the dataset."""
         return self.z.trajectory_ids[:]
-
+    
+    @property
+    def boundary_mask(self) -> NDArray[Any]:
+        """Return the boundary mask of the dataset."""
+        try:
+            return self.z.boundary_mask[:]
+        except AttributeError:
+            LOG.warning("No 'boundary_mask' in %r, returning None", self)
+            return None
+        
+    @property
+    def lam_mask(self) -> NDArray[Any]:
+        """Return the lam mask of the dataset."""
+        try:
+            return self.z.lam_mask[:]
+        except AttributeError:
+            LOG.warning("No 'lam_mask' in %r, returning None", self)
+            return None    
+        
     
     def statistics_tendencies(self, delta: datetime.timedelta | None = None) -> dict[str, NDArray[Any]]:
         """Return the statistical tendencies of the dataset."""
