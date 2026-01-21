@@ -26,7 +26,7 @@ def plot_mask(
     global_lats: NDArray[Any],
     global_lons: NDArray[Any],
 ) -> None:
-    """Plot and save various visualizations of the mask and coordinates.
+    """Plot and save various visualizations of the mask and coordinates using Cartopy.
 
     Parameters
     ----------
@@ -44,48 +44,141 @@ def plot_mask(
         Global longitude coordinates.
     """
     import matplotlib.pyplot as plt
+    import cartopy.crs as ccrs
+    import cartopy.feature as cfeature
 
     s = 1
 
+    # Convert longitudes to -180 to 180 range
+    global_lons = global_lons.copy()
+    lons = lons.copy()
     global_lons[global_lons >= 180] -= 360
+    lons[lons >= 180] -= 360
 
-    plt.figure(figsize=(10, 5))
-    plt.scatter(global_lons, global_lats, s=s, marker="o", c="r")
-    if isinstance(path, str):
-        plt.savefig(path + "-global.png")
+    # Determine appropriate projection based on LAM domain
+    lon_center = (np.amin(lons) + np.amax(lons)) / 2
+    lat_center = (np.amin(lats) + np.amax(lats)) / 2
+    
+    # Use PlateCarree for global view, Lambert Conformal for regional zoomed views
+    projection_global = ccrs.PlateCarree()
+    projection_regional = ccrs.LambertConformal(
+        central_longitude=lon_center,
+        central_latitude=lat_center
+    )
 
-    plt.figure(figsize=(10, 5))
-    plt.scatter(global_lons[mask], global_lats[mask], s=s, c="k")
+    # 1. Global points
+    fig = plt.figure(figsize=(12, 6))
+    ax = fig.add_subplot(1, 1, 1, projection=projection_global)
+    ax.coastlines(resolution='110m')
+    ax.add_feature(cfeature.BORDERS, linestyle=':')
+    ax.gridlines(draw_labels=True, dms=True, x_inline=False, y_inline=False)
+    ax.scatter(global_lons, global_lats, s=s, marker="o", c="r", 
+               transform=ccrs.PlateCarree(), label='Global points')
+    ax.set_global()
+    ax.legend()
+    ax.set_title('Global Grid Points')
     if isinstance(path, str):
-        plt.savefig(path + "-cutout.png")
+        plt.savefig(path + "-global.png", dpi=150, bbox_inches='tight')
+    plt.close()
 
-    plt.figure(figsize=(10, 5))
-    plt.scatter(lons, lats, s=s)
+    # 2. Masked cutout points
+    fig = plt.figure(figsize=(12, 6))
+    ax = fig.add_subplot(1, 1, 1, projection=projection_global)
+    ax.coastlines(resolution='110m')
+    ax.add_feature(cfeature.BORDERS, linestyle=':')
+    ax.gridlines(draw_labels=True, dms=True, x_inline=False, y_inline=False)
+    ax.scatter(global_lons[mask], global_lats[mask], s=s, c="k", 
+               transform=ccrs.PlateCarree(), label='Cutout points')
+    ax.set_global()
+    ax.legend()
+    ax.set_title('Masked Cutout Points')
     if isinstance(path, str):
-        plt.savefig(path + "-lam.png")
-    # plt.scatter(lons, lats, s=0.01)
+        plt.savefig(path + "-cutout.png", dpi=150, bbox_inches='tight')
+    plt.close()
 
-    plt.figure(figsize=(10, 5))
-    plt.scatter(global_lons[mask], global_lats[mask], s=s, c="r")
-    plt.scatter(lons, lats, s=s)
+    # 3. LAM domain points
+    fig = plt.figure(figsize=(12, 8))
+    ax = fig.add_subplot(1, 1, 1, projection=projection_regional)
+    ax.coastlines(resolution='50m')
+    ax.add_feature(cfeature.BORDERS, linestyle=':')
+    ax.add_feature(cfeature.LAND, alpha=0.3)
+    ax.gridlines(draw_labels=True, dms=True, x_inline=False, y_inline=False)
+    ax.scatter(lons, lats, s=s, c='blue', 
+               transform=ccrs.PlateCarree(), label='LAM points')
+    
+    # Set extent with padding
+    padding = 1
+    ax.set_extent([np.amin(lons) - padding, np.amax(lons) + padding,
+                   np.amin(lats) - padding, np.amax(lats) + padding],
+                  crs=ccrs.PlateCarree())
+    ax.legend()
+    ax.set_title('LAM Domain Points')
     if isinstance(path, str):
-        plt.savefig(path + "-both.png")
-    # plt.scatter(lons, lats, s=0.01)
+        plt.savefig(path + "-lam.png", dpi=150, bbox_inches='tight')
+    plt.close()
 
-    plt.figure(figsize=(10, 5))
-    plt.scatter(global_lons[mask], global_lats[mask], s=s, c="r")
-    plt.scatter(lons, lats, s=s)
-    plt.xlim(np.amin(lons) - 1, np.amax(lons) + 1)
-    plt.ylim(np.amin(lats) - 1, np.amax(lats) + 1)
+    # 4. Both global mask and LAM overlay
+    fig = plt.figure(figsize=(12, 6))
+    ax = fig.add_subplot(1, 1, 1, projection=projection_global)
+    ax.coastlines(resolution='110m')
+    ax.add_feature(cfeature.BORDERS, linestyle=':')
+    ax.gridlines(draw_labels=True, dms=True, x_inline=False, y_inline=False)
+    ax.scatter(global_lons[mask], global_lats[mask], s=s, c="r", 
+               transform=ccrs.PlateCarree(), label='Global masked', alpha=0.6)
+    ax.scatter(lons, lats, s=s, c='blue',
+               transform=ccrs.PlateCarree(), label='LAM points', alpha=0.6)
+    ax.set_global()
+    ax.legend()
+    ax.set_title('Global Masked + LAM Points')
     if isinstance(path, str):
-        plt.savefig(path + "-both-zoomed.png")
+        plt.savefig(path + "-both.png", dpi=150, bbox_inches='tight')
+    plt.close()
 
-    plt.figure(figsize=(10, 5))
-    plt.scatter(global_lons[mask], global_lats[mask], s=s, c="r")
-    plt.xlim(np.amin(lons) - 1, np.amax(lons) + 1)
-    plt.ylim(np.amin(lats) - 1, np.amax(lats) + 1)
+    # 5. Both zoomed to LAM region
+    fig = plt.figure(figsize=(12, 8))
+    ax = fig.add_subplot(1, 1, 1, projection=projection_regional)
+    ax.coastlines(resolution='50m')
+    ax.add_feature(cfeature.BORDERS, linestyle=':')
+    ax.add_feature(cfeature.LAND, alpha=0.3)
+    ax.gridlines(draw_labels=True, dms=True, x_inline=False, y_inline=False)
+    
+    ax.scatter(global_lons[mask], global_lats[mask], s=s, c="r", 
+               transform=ccrs.PlateCarree(), label='Global masked', alpha=0.6)
+    ax.scatter(lons, lats, s=s, c='blue',
+               transform=ccrs.PlateCarree(), label='LAM points', alpha=0.6)
+    
+    padding = 1
+    ax.set_extent([np.amin(lons) - padding, np.amax(lons) + padding,
+                   np.amin(lats) - padding, np.amax(lats) + padding],
+                  crs=ccrs.PlateCarree())
+    ax.legend()
+    ax.set_title('Global Masked + LAM Points (Zoomed)')
     if isinstance(path, str):
-        plt.savefig(path + "-global-zoomed.png")
+        plt.savefig(path + "-both-zoomed.png", dpi=150, bbox_inches='tight')
+    plt.close()
+
+    # 6. Global masked points zoomed to LAM region
+    fig = plt.figure(figsize=(12, 8))
+    ax = fig.add_subplot(1, 1, 1, projection=projection_regional)
+    ax.coastlines(resolution='50m')
+    ax.add_feature(cfeature.BORDERS, linestyle=':')
+    ax.add_feature(cfeature.LAND, alpha=0.3)
+    ax.gridlines(draw_labels=True, dms=True, x_inline=False, y_inline=False)
+    
+    ax.scatter(global_lons[mask], global_lats[mask], s=s, c="r", 
+               transform=ccrs.PlateCarree(), label='Global masked')
+    
+    padding = 1
+    ax.set_extent([np.amin(lons) - padding, np.amax(lons) + padding,
+                   np.amin(lats) - padding, np.amax(lats) + padding],
+                  crs=ccrs.PlateCarree())
+    ax.legend()
+    ax.set_title('Global Masked Points (Zoomed to LAM Region)')
+    if isinstance(path, str):
+        plt.savefig(path + "-global-zoomed.png", dpi=150, bbox_inches='tight')
+    plt.close()
+
+    #print(f"Saved {6} plots with base path: {path}")
 
 
 # TODO: Use the one from anemoi.utils.grids instead

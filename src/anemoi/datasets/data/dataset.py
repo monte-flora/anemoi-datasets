@@ -194,6 +194,12 @@ class Dataset(ABC, Sized):
                 Subset(self, self._dates_to_indices(start, end), dict(start=start, end=end))._subset(**kwargs).mutate()
             )
 
+        if "months" in kwargs:
+            from .subset import Subset
+
+            months = kwargs.pop("months")
+            return Subset(self, self._months_to_indices(months), dict(months=months))._subset(**kwargs).mutate()
+
         if "frequency" in kwargs:
             from .subset import Subset
 
@@ -381,6 +387,30 @@ class Dataset(ABC, Sized):
         end = self.dates[-1] if end is None else as_last_date(end, self.dates)
 
         return [i for i, date in enumerate(self.dates) if start <= date <= end]
+
+    def _months_to_indices(self, months: list[int] | int) -> list[int]:
+        """Convert month specification to a list of indices.
+
+        Parameters
+        ----------
+        months : list of int or int
+            The month(s) to filter by (1-12). Can be a single integer or a list.
+
+        Returns
+        -------
+        list of int
+            The list of indices matching the specified months.
+        """
+        if isinstance(months, int):
+            months = [months]
+
+        # Validate month values
+        if not all(1 <= m <= 12 for m in months):
+            raise ValueError(f"Month values must be between 1 and 12, got {months}")
+
+        months_set = set(months)
+
+        return [i for i, date in enumerate(self.dates) if date.astype(datetime.datetime).month in months_set]
 
     def _select_to_columns(self, vars: str | list[str] | tuple[str] | set) -> list[int]:
         """Convert variable names to a list of column indices.

@@ -456,10 +456,20 @@ class ZarrWithMissingDates(Zarr):
         """Initialize the ZarrWithMissingDates dataset with a path or zarr group."""
         super().__init__(path)
 
-        missing_dates = self.z.attrs.get("missing_dates", [])
-        missing_dates = {np.datetime64(x, "s") for x in missing_dates}
-        self.missing_to_dates = {i: d for i, d in enumerate(self.dates) if d in missing_dates}
-        self._missing = set(self.missing_to_dates)
+        # Prefer missing_indices if available (correct for forecast data with duplicate valid times)
+        if "missing_indices" in self.z.attrs:
+            missing_indices = self.z.attrs["missing_indices"]
+            self._missing = set(missing_indices)
+            # Build missing_to_dates for error reporting
+            self.missing_to_dates = {
+                i: self.dates[i] for i in missing_indices if i < len(self.dates)
+            }
+        else:
+            # Fallback to missing_dates (legacy/analysis data behavior)
+            missing_dates = self.z.attrs.get("missing_dates", [])
+            missing_dates = {np.datetime64(x, "s") for x in missing_dates}
+            self.missing_to_dates = {i: d for i, d in enumerate(self.dates) if d in missing_dates}
+            self._missing = set(self.missing_to_dates)
         
     @property
     def missing(self) -> set[int]:

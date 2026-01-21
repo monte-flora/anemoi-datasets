@@ -280,6 +280,12 @@ class Subset(Forwards):
                 result.add(j)
         return result
 
+    @cached_property
+    def trajectory_ids(self) -> NDArray[np.int64]:
+        """Get the filtered trajectory ids of the subset."""
+        all_trajectory_ids = np.array(self.dataset.trajectory_ids)
+        return all_trajectory_ids[self.indices]
+
     def tree(self) -> Node:
         """Get the tree representation of the subset.
 
