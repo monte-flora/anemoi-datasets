@@ -245,11 +245,35 @@ class Subset(Forwards):
 
     @cached_property
     def frequency(self) -> datetime.timedelta:
-        """Get the frequency of the subset."""
+        """Get the frequency of the subset.
+
+        Trajectory-aware: in trajectory-ordered datasets (e.g. patches with
+        many trajectories starting at the same timestamp) the dates inside a
+        date-range subset are not monotonic, so ``dates[1] - dates[0]`` can be
+        zero or negative. The underlying time resolution still comes from the
+        parent dataset, so the resolution is:
+
+        1. honor an explicit frequency stored in ``self.reason`` — set when
+           the subset was built for frequency reduction (e.g. 15m → 1h);
+        2. otherwise compute ``dates[1] - dates[0]`` and return it if it is
+           strictly positive (the original, monotonic-dates path);
+        3. otherwise (non-monotonic dates) fall back to
+           ``self.dataset.frequency``, which preserves the underlying time
+           resolution across date-range slicing.
+        """
+        explicit = self.reason.get("frequency")
+        if explicit is not None:
+            return frequency_to_timedelta(explicit)
+
         dates = self.dates
         if len(dates) < 2:
             raise ValueError(f"Cannot determine frequency of a subset with less than two dates ({self.dates}).")
-        return frequency_to_timedelta(dates[1].astype(object) - dates[0].astype(object))
+
+        diff = dates[1].astype(object) - dates[0].astype(object)
+        if diff > datetime.timedelta(0):
+            return frequency_to_timedelta(diff)
+
+        return self.dataset.frequency
 
     def source(self, index: int) -> Source:
         """Get the source of the subset.
