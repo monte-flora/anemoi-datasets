@@ -302,10 +302,19 @@ class Zarr(Dataset):
             minimum=self.z.minimum[:],
         )
     
-    @property
+    @cached_property
     def trajectory_ids(self) -> NDArray[Any]:
-        """Return the forecast trajectory ids of the dataset."""
-        return self.z.trajectory_ids[:]
+        """Return the forecast trajectory ids of the dataset.
+
+        Read ONCE into an owned copy and cache it. The underlying store read
+        (``self.z.trajectory_ids[:]``) aliases a shared buffer that gets
+        clobbered by interleaved reads (e.g. ``missing``/data access), so
+        re-reading the live array returned different values on each access —
+        producing non-deterministic, misaligned trajectory-based train/val
+        splits. ``np.array(...)`` forces a fresh buffer and ``cached_property``
+        guarantees a single read shared by all consumers.
+        """
+        return np.array(self.z.trajectory_ids[:])
     
     @property
     def boundary_mask(self) -> NDArray[Any]:
